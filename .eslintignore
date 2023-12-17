@@ -1,0 +1,9 @@
+/.vscode/*
+/.idea/*
+/.husky/*
+
+/public/*
+/dist/*
+
+/src/vite-env.d.ts
+components.d.ts
