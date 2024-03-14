@@ -141,6 +141,7 @@
               type="file"
               :file-list="fileList"
               id="fileInput"
+              @change="handleChange"
             >
               <a-button>
                 <upload-outlined></upload-outlined>
@@ -189,7 +190,7 @@ import { useDetailsStore } from "@/stores/details";
 import { storeToRefs } from "pinia";
 import type { Rule } from "ant-design-vue/es/form";
 import { post } from "@/request/request";
-// import { UploadOutlined } from "@ant-design/icons-vue";
+import type { UploadChangeParam, UploadProps } from "ant-design-vue";
 
 export default defineComponent({
   setup() {
@@ -253,6 +254,9 @@ export default defineComponent({
         store.getUserMes(urls);
       }
     });
+    const handleChange = (info: UploadChangeParam) => {
+      fileList.value[0] = info.file;
+    };
     //修改个人信息-抽屉
     interface formState {
       Fid: number;
@@ -370,8 +374,9 @@ export default defineComponent({
     };
     const imgUrl = ref("");
     function uploadImage() {
-      if (fileList.value[0]) {
+      if (fileList.value) {
         const file = fileList.value[0];
+        // console.log(11222, file);
         const formData = new FormData();
         formData.append("file", file);
 
@@ -405,6 +410,7 @@ export default defineComponent({
       type,
       fileList,
       uploadImage,
+      handleChange,
       imgUrl,
     };
   },
