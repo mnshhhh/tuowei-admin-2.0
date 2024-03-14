@@ -135,6 +135,32 @@
           </div>
         </a-col>
         <a-col :span="4">
+          <div class="upload">
+            <a-upload
+              :multiple="true"
+              type="file"
+              :file-list="fileList"
+              id="fileInput"
+            >
+              <a-button>
+                <upload-outlined></upload-outlined>
+                Upload
+              </a-button>
+            </a-upload>
+          </div>
+          <div class="buttom">
+            <button @click="uploadImage">进行分割</button>
+          </div>
+          <div>
+            <img
+              :src="imgUrl"
+              alt="请重新加载"
+              class="imgShow"
+              v-show="imgUrl"
+            />
+          </div>
+        </a-col>
+        <!-- <a-col :span="4">
           <div class="img">
             <a-image
               :width="480"
@@ -150,7 +176,7 @@
             @click="change"
             >进行分割
           </a-button>
-        </a-col>
+        </a-col> -->
       </a-row>
     </a-spin>
   </div>
@@ -163,10 +189,13 @@ import { useDetailsStore } from "@/stores/details";
 import { storeToRefs } from "pinia";
 import type { Rule } from "ant-design-vue/es/form";
 import { post } from "@/request/request";
+// import { UploadOutlined } from "@ant-design/icons-vue";
+
 export default defineComponent({
   setup() {
     const token: any = localStorage.getItem("token");
     const type: any = localStorage.getItem("type");
+    const fileList = ref();
     let router = useRouter();
     let isloading = ref(false);
     let spinning = ref(false);
@@ -339,6 +368,28 @@ export default defineComponent({
           console.log("error", error);
         });
     };
+    const imgUrl = ref("");
+    function uploadImage() {
+      if (fileList.value[0]) {
+        const file = fileList.value[0];
+        const formData = new FormData();
+        formData.append("file", file);
+
+        fetch("http://localhost:6868/siaunet", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            //未知得到的照片
+            imgUrl.value = data;
+            console.log(data); // 可根据需要处理响应数据
+          })
+          .catch((error) => {
+            console.error("上传图片出错:", error);
+          });
+      } else return;
+    }
     return {
       isloading,
       change,
@@ -352,6 +403,9 @@ export default defineComponent({
       open,
       formRef,
       type,
+      fileList,
+      uploadImage,
+      imgUrl,
     };
   },
 });
@@ -377,20 +431,35 @@ export default defineComponent({
   justify-content: center;
   align-items: center;
   flex-direction: column;
+
   .top {
     margin-top: 20px;
   }
 }
+
 .pad {
   padding: 20px;
 }
+
 .img {
   margin-top: 20px;
   width: 480px;
   height: 540px;
 }
+
 .but {
   margin-top: 20px;
   transform: translateX(190px);
+}
+.upload {
+  height: 70px;
+}
+.buttom {
+  height: 30px;
+}
+.imgShow {
+  margin-top: 20px;
+  width: 400px;
+  height: 400px;
 }
 </style>
