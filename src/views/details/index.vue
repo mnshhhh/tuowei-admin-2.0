@@ -135,7 +135,7 @@
           </div>
         </a-col>
         <a-col :span="4">
-          <div class="upload">
+          <!-- <div class="upload">
             <a-upload
               :multiple="true"
               type="file"
@@ -158,6 +158,36 @@
               alt="请重新加载"
               class="imgShow"
               v-show="imgUrl"
+            />
+          </div> -->
+          <div class="clearfix">
+            <a-upload
+              :file-list="fileList"
+              :before-upload="beforeUpload"
+              @remove="handleRemove"
+              :max-count="1"
+            >
+              <a-button>
+                <upload-outlined></upload-outlined>
+                选择图片
+              </a-button>
+            </a-upload>
+            <a-button
+              type="primary"
+              :loading="uploading"
+              style="margin-top: 16px"
+              @click="handleUpload"
+            >
+              {{ uploading ? "切割中" : "医学切割" }}
+            </a-button>
+          </div>
+          <div style="margin-top: 20px; width: 400px; height: 400px">
+            <img
+              :src="labelImg"
+              alt=""
+              style="width: 399px; height: 399px"
+              :key="imgNew"
+              v-if="labelImg != undefined"
             />
           </div>
         </a-col>
@@ -190,16 +220,19 @@ import { useDetailsStore } from "@/stores/details";
 import { storeToRefs } from "pinia";
 import type { Rule } from "ant-design-vue/es/form";
 import { post } from "@/request/request";
-import type { UploadChangeParam, UploadProps } from "ant-design-vue";
-
+import type { UploadProps } from "ant-design-vue";
+// import { UploadOutlined } from "@ant-design/icons-vue";
 export default defineComponent({
   setup() {
     const token: any = localStorage.getItem("token");
     const type: any = localStorage.getItem("type");
     const fileList = ref();
+    const uploading = ref<boolean>(false);
     let router = useRouter();
     let isloading = ref(false);
     let spinning = ref(false);
+    const imgNew = ref(0);
+    const labelImg = ref();
     const change = function () {
       isloading.value = true;
       spinning.value = true;
@@ -243,7 +276,6 @@ export default defineComponent({
         name,
       });
     }
-
     onMounted(() => {
       let token = localStorage.getItem("token");
       let type: any = localStorage.getItem("type");
@@ -254,9 +286,9 @@ export default defineComponent({
         store.getUserMes(urls);
       }
     });
-    const handleChange = (info: UploadChangeParam) => {
-      fileList.value[0] = info.file;
-    };
+    // const handleChange = (info: UploadChangeParam) => {
+    //   fileList.value[0] = info.file;
+    // };
     //修改个人信息-抽屉
     interface formState {
       Fid: number;
@@ -387,7 +419,8 @@ export default defineComponent({
           .then((response) => response.json())
           .then((data) => {
             //未知得到的照片
-            imgUrl.value = data;
+            imgUrl.value =
+              "data:image/jpeg;base64," + arrayBufferToBase64(data);
             console.log(data); // 可根据需要处理响应数据
           })
           .catch((error) => {
@@ -395,6 +428,58 @@ export default defineComponent({
           });
       } else return;
     }
+    const arrayBufferToBase64 = (buffer: Iterable<number>) => {
+      //第一步，将ArrayBuffer转为二进制字符串
+      var binary = "";
+      var bytes = new Uint8Array(buffer);
+      var len = bytes.byteLength;
+      for (var i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      //将二进制字符串转为base64字符串
+      return window.btoa(binary);
+    };
+    const handleRemove: UploadProps["onRemove"] = (file) => {
+      const index = fileList.value.indexOf(file);
+      const newFileList = fileList.value.slice();
+      newFileList.splice(index, 1);
+      fileList.value = newFileList;
+    };
+
+    const beforeUpload: UploadProps["beforeUpload"] = (file) => {
+      fileList.value = [...(fileList.value || []), file];
+      return false;
+    };
+
+    const handleUpload = () => {
+      const formData = new FormData();
+      fileList.value.forEach((file: UploadProps["fileList"]) => {
+        formData.append("files[]", file as any);
+      });
+      uploading.value = true;
+      // console.log(5557, imgNew.value);
+      ++imgNew.value;
+      // console.log(555, imgNew.value);
+      // console.log(88, labelImg.value);
+
+      // You can use any AJAX library you like
+      fetch("http://localhost:6868/siaunet", {
+        method: "post",
+        body: formData,
+      })
+        .then((res) => res.blob())
+        .then((blob) => {
+          fileList.value = [];
+          labelImg.value = URL.createObjectURL(blob);
+          console.log(labelImg.value);
+          uploading.value = false;
+          message.success("upload successfully.");
+        })
+        .catch(() => {
+          uploading.value = false;
+          message.error("upload failed.");
+        });
+    };
     return {
       isloading,
       change,
@@ -410,8 +495,14 @@ export default defineComponent({
       type,
       fileList,
       uploadImage,
-      handleChange,
+      // handleChange,
       imgUrl,
+      uploading,
+      handleRemove,
+      beforeUpload,
+      handleUpload,
+      labelImg,
+      imgNew,
     };
   },
 });
@@ -467,5 +558,8 @@ export default defineComponent({
   margin-top: 20px;
   width: 400px;
   height: 400px;
+}
+.clearfix {
+  height: 150px;
 }
 </style>
