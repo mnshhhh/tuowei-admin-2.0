@@ -405,6 +405,7 @@ export default defineComponent({
         });
     };
     const imgUrl = ref("");
+    console.log(111, fileList.value);
     function uploadImage() {
       if (fileList.value) {
         const file = fileList.value[0];
@@ -453,11 +454,13 @@ export default defineComponent({
 
     const handleUpload = () => {
       const formData = new FormData();
-      fileList.value.forEach((file: UploadProps["fileList"]) => {
-        formData.append("files[]", file as any);
-      });
+      // fileList.value.forEach((file: UploadProps["fileList"]) => {
+      //   formData.append("files[]", file as any);
+      // });
+      formData.append("file[]", fileList.value[0]);
       uploading.value = true;
-      // console.log(5557, imgNew.value);
+      console.log(5557, fileList.value[0]);
+      console.log(999, formData.get("file[]"));
       ++imgNew.value;
       // console.log(555, imgNew.value);
       // console.log(88, labelImg.value);
@@ -467,14 +470,20 @@ export default defineComponent({
         method: "post",
         body: formData,
       })
-        .then((res) => res.blob())
-        .then((blob) => {
-          fileList.value = [];
-          labelImg.value = URL.createObjectURL(blob);
-          console.log(labelImg.value);
-          uploading.value = false;
-          message.success("upload successfully.");
+        .then((response) => response.json())
+        .then((data) => {
+          //未知得到的照片
+          imgUrl.value = "data:image/jpeg;base64," + arrayBufferToBase64(data);
+          console.log(data); // 可根据需要处理响应数据
         })
+        // .then((res) => res.blob())
+        // .then((blob) => {
+        //   fileList.value = [];
+        //   labelImg.value = URL.createObjectURL(blob);
+        //   console.log(labelImg.value);
+        //   uploading.value = false;
+        //   message.success("upload successfully.");
+        // })
         .catch(() => {
           uploading.value = false;
           message.error("upload failed.");
